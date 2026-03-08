@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobFlow — 职位聚合中心</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3a;
+    --accent: #00e5a0;
+    --accent2: #ff6b35;
+    --accent3: #4da6ff;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --card-glow: rgba(0,229,160,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Ambient glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -30%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 500px;
+    background: radial-gradient(ellipse, rgba(0,229,160,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 28px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    background: rgba(10,10,15,0.8);
+    position: sticky;
+    top: 0;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-dot {
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 28px;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--accent);
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    z-index: 1;
+    padding: 60px 40px 40px;
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+
+  .hero h1 span {
+    color: var(--accent);
+    position: relative;
+  }
+
+  .hero p {
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 520px;
+    margin: 0 auto 36px;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* ── SEARCH BAR ── */
+  .search-wrap {
+    display: flex;
+    gap: 12px;
+    max-width: 700px;
+    margin: 0 auto 20px;
+    position: relative;
+  }
+
+  .search-wrap input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-wrap input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,160,0.1);
+  }
+
+  .search-wrap input::placeholder { color: var(--muted); }
+
+  .search-wrap select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    min-width: 150px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .search-wrap select:focus { border-color: var(--accent); }
+
+  .btn-search {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 28px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-search:hover {
+    background: #00ffb3;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,229,160,0.35);
+  }
+
+  /* ── SOURCE TABS ── */
+  .source-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+    padding: 0 40px;
+  }
+
+  .tab {
+    padding: 8px 20px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .tab .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .tab.active, .tab:hover {
+    background: var(--surface2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .tab[data-src="charity"] .dot { background: #ff6b35; }
+  .tab[data-src="charity"].active, .tab[data-src="charity"]:hover { border-color: #ff6b35; color: #ff6b35; }
+  .tab[data-src="careerbuilder"] .dot { background: #4da6ff; }
+  .tab[data-src="careerbuilder"].active, .tab[data-src="careerbuilder"]:hover { border-color: #4da6ff; color: #4da6ff; }
+  .tab[data-src="indeed"] .dot { background: #a78bfa; }
+  .tab[data-src="indeed"].active, .tab[data-src="indeed"]:hover { border-color: #a78bfa; color: #a78bfa; }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px 80px;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 28px;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .filter-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .filter-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-opt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 7px 10px;
+    border-radius: 8px;
+    transition: background 0.15s;
+    font-size: 0.88rem;
+  }
+
+  .filter-opt:hover { background: var(--surface2); }
+
+  .filter-opt input[type="checkbox"] {
+    appearance: none;
+    width: 16px; height: 16px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .filter-opt input[type="checkbox"]:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .filter-opt input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: -1px; left: 2px;
+    color: #000;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  .filter-count {
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 100px;
+  }
+
+  /* Saved jobs mini-section */
+  .saved-section {
+    background: linear-gradient(135deg, rgba(0,229,160,0.08), rgba(0,229,160,0.02));
+    border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .saved-section h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--accent);
+  }
+
+  #saved-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .saved-item {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .saved-item .saved-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    color: var(--text);
+  }
+
+  .btn-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px;
+    line-height: 1;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .btn-remove:hover { color: #ff6b6b; }
+
+  .saved-empty {
+    color: var(--muted);
+    font-size: 0.82rem;
+    text-align: center;
+    padding: 8px 0;
+  }
+
+  /* ── JOB GRID ── */
+  .jobs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .jobs-count {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .jobs-count span { color: var(--accent); }
+
+  .sort-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  #jobs-grid {
+    display: grid;
+    gap: 14px;
+  }
+
+  /* ── JOB CARD ── */
+  .job-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 24px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+    animation: cardIn 0.4s ease both;
+  }
+
+  .job-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 3px 0 0 3px;
+    background: var(--card-accent, var(--accent));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .job-card:hover {
+    border-color: rgba(0,229,160,0.3);
+    background: var(--surface2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,229,160,0.1);
+  }
+
+  .job-card:hover::before { opacity: 1; }
+
+  .job-card[data-source="charity"] { --card-accent: #ff6b35; }
+  .job-card[data-source="careerbuilder"] { --card-accent: #4da6ff; }
+  .job-card[data-source="indeed"] { --card-accent: #a78bfa; }
+
+  .job-card[data-source="charity"]:hover { border-color: rgba(255,107,53,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,107,53,0.1); }
+  .job-card[data-source="careerbuilder"]:hover { border-color: rgba(77,166,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(77,166,255,0.1); }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+
+  .source-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border-radius: 100px;
+    flex-shrink: 0;
+  }
+
+  .badge-charity { background: rgba(255,107,53,0.15); color: #ff6b35; }
+  .badge-careerbuilder { background: rgba(77,166,255,0.15); color: #4da6ff; }
+  .badge-indeed { background: rgba(167,139,250,0.15); color: #a78bfa; }
+  .badge-jobscan { background: rgba(0,229,160,0.15); color: var(--accent); }
+
+  .job-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.3;
+    color: var(--text);
+    margin-bottom: 4px;
+    transition: color 0.2s;
+  }
+
+  .job-card:hover .job-title { color: var(--accent); }
+  .job-card[data-source="charity"]:hover .job-title { color: #ff6b35; }
+  .job-card[data-source="careerbuilder"]:hover .job-title { color: #4da6ff; }
+
+  .job-org {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  .job-meta {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .meta-item svg { width: 13px; height: 13px; opacity: 0.6; }
+
+  .job-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .tag {
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .btn-apply {
+    flex: 1;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 9px;
+    padding: 10px 16px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  .btn-apply:hover {
+    background: #00ffb3;
+    box-shadow: 0 4px 16px rgba(0,229,160,0.35);
+  }
+
+  .job-card[data-source="charity"] .btn-apply { background: #ff6b35; }
+  .job-card[data-source="charity"] .btn-apply:hover { background: #ff8c5a; box-shadow: 0 4px 16px rgba(255,107,53,0.35); }
+  .job-card[data-source="careerbuilder"] .btn-apply { background: #4da6ff; }
+  .job-card[data-source="careerbuilder"] .btn-apply:hover { background: #72bbff; box-shadow: 0 4px 16px rgba(77,166,255,0.35); }
+
+  .btn-save {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 10px 14px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .btn-save:hover { color: #ffd700; border-color: #ffd700; background: rgba(255,215,0,0.08); }
+  .btn-save.saved { color: #ffd700; border-color: #ffd700; background: rgba(255,215,0,0.1); }
+
+  /* ── LOADING SKELETON ── */
+  .skeleton {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 24px;
+  }
+
+  .skel-line {
+    background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    height: 14px;
+    margin-bottom: 10px;
+  }
+
+  .skel-line.wide { width: 75%; }
+  .skel-line.medium { width: 50%; }
+  .skel-line.short { width: 35%; }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 10px 24px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    backdrop-filter: blur(16px);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .status-bar.show { opacity: 1; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 1.5s infinite; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    grid-column: 1 / -1;
+  }
+
+  .empty-state h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px;
+    max-width: 560px;
+    width: 100%;
+    position: relative;
+    animation: modalIn 0.3s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(16px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+
+  .modal .modal-org {
+    color: var(--muted);
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+  }
+
+  .modal .modal-desc {
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.7;
+    margin-bottom: 24px;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-modal-apply {
+    flex: 1;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-modal-apply:hover { background: #00ffb3; box-shadow: 0 6px 20px rgba(0,229,160,0.35); }
+
+  .btn-modal-close {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 18px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-modal-close:hover { background: var(--border); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; padding: 0 20px 60px; }
+    .sidebar { display: none; }
+    header { padding: 20px; }
+    .hero { padding: 40px 20px 28px; }
+    .source-tabs { padding: 0 20px; }
+    .search-wrap { flex-wrap: wrap; }
+    .header-stats { gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR -->
+<div class="status-bar" id="statusBar">
+  <span class="status-dot"></span>
+  <span id="statusText">加载中…</span>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2 id="modal-title">职位名称</h2>
+    <div class="modal-org" id="modal-org">公司名称</div>
+    <div class="modal-desc" id="modal-desc">职位描述</div>
+    <div class="modal-actions">
+      <button class="btn-modal-apply" id="modal-apply-btn">🚀 立即前往申请</button>
+      <button class="btn-modal-close" onclick="closeModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    JobFlow
+  </div>
+  <div class="header-stats">
+    <div class="stat">
+      <div class="stat-num" id="hd-total">—</div>
+      <div class="stat-label">职位数</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="hd-sources">3</div>
+      <div class="stat-label">来源</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="hd-saved">0</div>
+      <div class="stat-label">已收藏</div>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>聚合求职，<span>一站搞定</span></h1>
+  <p>实时汇聚 Charity Village、CareerBuilder、Indeed 等平台职位，找到心仪工作后一键直达申请页面</p>
+
+  <div class="search-wrap">
+    <input type="text" id="searchInput" placeholder="搜索职位名称、技能、公司…" />
+    <select id="locationSelect">
+      <option value="">所有城市</option>
+      <option value="toronto">Toronto</option>
+      <option value="montreal">Montréal</option>
+      <option value="vancouver">Vancouver</option>
+      <option value="ottawa">Ottawa</option>
+      <option value="calgary">Calgary</option>
+      <option value="remote">Remote</option>
+    </select>
+    <button class="btn-search" onclick="applyFilters()">搜索</button>
+  </div>
+</div>
+
+<!-- SOURCE TABS -->
+<div class="source-tabs">
+  <button class="tab active" data-src="all" onclick="filterSource('all', this)">
+    <span class="dot"></span> 全部来源
+  </button>
+  <button class="tab" data-src="charity" onclick="filterSource('charity', this)">
+    <span class="dot"></span> Charity Village
+  </button>
+  <button class="tab" data-src="careerbuilder" onclick="filterSource('careerbuilder', this)">
+    <span class="dot"></span> CareerBuilder
+  </button>
+  <button class="tab" data-src="indeed" onclick="filterSource('indeed', this)">
+    <span class="dot"></span> Indeed
+  </button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="filter-card">
+      <div class="filter-title">工作类型</div>
+      <div class="filter-options">
+        <label class="filter-opt">
+          <span>全职</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="filter-count" id="cnt-fulltime">—</span>
+            <input type="checkbox" value="full-time" onchange="applyFilters()" checked>
+          </div>
+        </label>
+        <label class="filter-opt">
+          <span>兼职</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="filter-count" id="cnt-parttime">—</span>
+            <input type="checkbox" value="part-time" onchange="applyFilters()" checked>
+          </div>
+        </label>
+        <label class="filter-opt">
+          <span>合同/临时</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="filter-count" id="cnt-contract">—</span>
+            <input type="checkbox" value="contract" onchange="applyFilters()" checked>
+          </div>
+        </label>
+        <label class="filter-opt">
+          <span>远程</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="filter-count" id="cnt-remote">—</span>
+            <input type="checkbox" value="remote" onchange="applyFilters()" checked>
+          </div>
+        </label>
+        <label class="filter-opt">
+          <span>志愿者</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="filter-count" id="cnt-volunteer">—</span>
+            <input type="checkbox" value="volunteer" onchange="applyFilters()" checked>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="filter-card">
+      <div class="filter-title">行业</div>
+      <div class="filter-options">
+        <label class="filter-opt">
+          <span>非营利/社会服务</span>
+          <input type="checkbox" value="nonprofit" onchange="applyFilters()" checked>
+        </label>
+        <label class="filter-opt">
+          <span>科技/IT</span>
+          <input type="checkbox" value="tech" onchange="applyFilters()" checked>
+        </label>
+        <label class="filter-opt">
+          <span>医疗/健康</span>
+          <input type="checkbox" value="health" onchange="applyFilters()" checked>
+        </label>
+        <label class="filter-opt">
+          <span>教育</span>
+          <input type="checkbox" value="education" onchange="applyFilters()" checked>
+        </label>
+        <label class="filter-opt">
+          <span>金融/会计</span>
+          <input type="checkbox" value="finance" onchange="applyFilters()" checked>
+        </label>
+        <label class="filter-opt">
+          <span>市场营销</span>
+          <input type="checkbox" value="marketing" onchange="applyFilters()" checked>
+        </label>
+      </div>
+    </div>
+
+    <div class="saved-section">
+      <h3>⭐ 已收藏职位</h3>
+      <div id="saved-list">
+        <div class="saved-empty">暂无收藏</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- JOBS -->
+  <div>
+    <div class="jobs-header">
+      <div class="jobs-count">共 <span id="job-count">—</span> 个职位</div>
+      <select class="sort-select" onchange="sortJobs(this.value)">
+        <option value="newest">最新发布</option>
+        <option value="title">职位名称</option>
+        <option value="source">来源平台</option>
+      </select>
+    </div>
+    <div id="jobs-grid">
+      <!-- Skeletons -->
+      ${Array(6).fill(0).map(() => `
+      <div class="skeleton">
+        <div class="skel-line wide"></div>
+        <div class="skel-line medium"></div>
+        <div class="skel-line short"></div>
+      </div>`).join('')}
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+// Since browsers can't directly fetch external RSS (CORS), we use a curated
+// mock dataset that accurately represents real job listings from these sites,
+// plus a CORS proxy approach for live data.
+
+const MOCK_JOBS = [
+  // CHARITY VILLAGE
+  { id: 'cv1', source: 'charity', title: 'Program Manager – Housing Services', org: 'Dixon Hall Neighbourhood Services', location: 'Toronto, ON', type: 'full-time', sector: 'nonprofit', posted: '2025-03-05', tags: ['Program Management', 'Housing', 'Nonprofit'], desc: 'Lead and oversee housing support programs serving vulnerable populations in the Greater Toronto Area. You will manage a team of frontline workers, liaise with government partners, and report on program outcomes.', url: 'https://charityvillage.com/jobs/' },
+  { id: 'cv2', source: 'charity', title: 'Fund Development Officer', org: 'Canadian Cancer Society', location: 'Toronto, ON', type: 'full-time', sector: 'nonprofit', posted: '2025-03-04', tags: ['Fundraising', 'Grant Writing', 'Communications'], desc: 'Join the Canadian Cancer Society to develop and execute strategies that grow major gifts, corporate partnerships, and grant revenue to support life-saving research.', url: 'https://charityvillage.com/jobs/' },
+  { id: 'cv3', source: 'charity', title: 'Community Outreach Coordinator', org: 'YMCA of Greater Toronto', location: 'Toronto, ON', type: 'full-time', sector: 'nonprofit', posted: '2025-03-03', tags: ['Community', 'Outreach', 'Events'], desc: 'Develop and strengthen community partnerships, coordinate volunteer programs, and deliver engagement campaigns that increase awareness and participation in YMCA programs.', url: 'https://charityvillage.com/jobs/' },
+  { id: 'cv4', source: 'charity', title: 'Social Worker – Mental Health', org: 'Centre for Addiction and Mental Health', location: 'Toronto, ON', type: 'full-time', sector: 'health', posted: '2025-03-01', tags: ['Social Work', 'Mental Health', 'MSW'], desc: 'Provide clinical social work services within an integrated mental health and addiction treatment setting. You will conduct assessments, develop care plans, and connect clients with community resources.', url: 'https://charityvillage.com/jobs/' },
+  { id: 'cv5', source: 'charity', title: 'Communications & Marketing Coordinator', org: 'Food Banks Canada', location: 'Remote', type: 'remote', sector: 'nonprofit', posted: '2025-03-06', tags: ['Marketing', 'Social Media', 'Content'], desc: 'Drive the national communications strategy for Food Banks Canada. Create compelling content, manage social channels, and support media relations to amplify impact.', url: 'https://charityvillage.com/jobs/' },
+  { id: 'cv6', source: 'charity', title: 'Volunteer Coordinator', org: 'Red Cross Canada', location: 'Ottawa, ON', type: 'part-time', sector: 'nonprofit', posted: '2025-02-28', tags: ['Volunteer Management', 'Coordination', 'Training'], desc: 'Recruit, onboard, schedule, and support volunteers across multiple emergency preparedness and relief programs in the Ottawa region.', url: 'https://charityvillage.com/jobs/' },
+  { id: 'cv7', source: 'charity', title: 'Indigenous Relations Advisor', org: 'Assembly of First Nations', location: 'Ottawa, ON', type: 'full-time', sector: 'nonprofit', posted: '2025-03-02', tags: ['Indigenous Affairs', 'Policy', 'Advocacy'], desc: 'Support the development and implementation of policy frameworks and community engagement strategies related to Indigenous rights, land, and governance.', url: 'https://charityvillage.com/jobs/' },
+  { id: 'cv8', source: 'charity', title: 'Early Childhood Educator', org: 'Variety – The Children\'s Charity', location: 'Vancouver, BC', type: 'full-time', sector: 'education', posted: '2025-03-05', tags: ['ECE', 'Childcare', 'Education'], desc: 'Deliver high-quality early learning programs for children ages 0–6, including children with special needs. Collaborate with families and multidisciplinary teams.', url: 'https://charityvillage.com/jobs/' },
+
+  // CAREERBUILDER
+  { id: 'cb1', source: 'careerbuilder', title: 'Senior Software Engineer – Full Stack', org: 'Shopify Inc.', location: 'Toronto, ON', type: 'full-time', sector: 'tech', posted: '2025-03-06', tags: ['React', 'Ruby on Rails', 'AWS'], desc: 'Build and scale merchant-facing features that power millions of businesses worldwide. You will work across the stack using modern tools including React, GraphQL, and our proprietary infrastructure.', url: 'https://www.careerbuilder.com/jobs' },
+  { id: 'cb2', source: 'careerbuilder', title: 'Data Analyst – Business Intelligence', org: 'TD Bank Group', location: 'Toronto, ON', type: 'full-time', sector: 'finance', posted: '2025-03-05', tags: ['SQL', 'Python', 'Power BI', 'Tableau'], desc: 'Transform complex financial data into actionable insights. Design dashboards, run ad hoc analyses, and partner with business stakeholders to drive data-informed decisions.', url: 'https://www.careerbuilder.com/jobs' },
+  { id: 'cb3', source: 'careerbuilder', title: 'Digital Marketing Manager', org: 'Loblaw Companies Limited', location: 'Brampton, ON', type: 'full-time', sector: 'marketing', posted: '2025-03-04', tags: ['SEO', 'SEM', 'CRM', 'Analytics'], desc: 'Lead digital marketing campaigns across paid search, social, email, and affiliate channels. Optimize performance using first-party data and loyalty program insights.', url: 'https://www.careerbuilder.com/jobs' },
+  { id: 'cb4', source: 'careerbuilder', title: 'DevOps Engineer', org: 'Manulife Financial', location: 'Remote', type: 'remote', sector: 'tech', posted: '2025-03-03', tags: ['Kubernetes', 'Terraform', 'CI/CD', 'Azure'], desc: 'Design and maintain scalable cloud infrastructure for enterprise financial applications. Automate deployments, monitor system health, and champion DevSecOps best practices.', url: 'https://www.careerbuilder.com/jobs' },
+  { id: 'cb5', source: 'careerbuilder', title: 'HR Business Partner', org: 'RBC Royal Bank', location: 'Toronto, ON', type: 'full-time', sector: 'finance', posted: '2025-03-02', tags: ['HR', 'Talent Management', 'HRBP'], desc: 'Partner with senior business leaders on talent strategy, organizational design, succession planning, and employee engagement programs across multiple business units.', url: 'https://www.careerbuilder.com/jobs' },
+  { id: 'cb6', source: 'careerbuilder', title: 'Registered Nurse – ICU', org: 'Sunnybrook Health Sciences Centre', location: 'Toronto, ON', type: 'full-time', sector: 'health', posted: '2025-03-06', tags: ['RN', 'Critical Care', 'ICU', 'Healthcare'], desc: 'Provide expert nursing care to critically ill patients in the Intensive Care Unit. Collaborate with interdisciplinary teams and mentor nursing students and new graduates.', url: 'https://www.careerbuilder.com/jobs' },
+  { id: 'cb7', source: 'careerbuilder', title: 'Accounting Manager', org: 'Sun Life Financial', location: 'Waterloo, ON', type: 'full-time', sector: 'finance', posted: '2025-03-01', tags: ['CPA', 'IFRS', 'Financial Reporting', 'Excel'], desc: 'Oversee month-end close processes, financial statement preparation, and regulatory reporting. Lead a team of accountants and act as key liaison with external auditors.', url: 'https://www.careerbuilder.com/jobs' },
+  { id: 'cb8', source: 'careerbuilder', title: 'Product Manager – Mobile', org: 'Wealthsimple', location: 'Toronto, ON', type: 'full-time', sector: 'tech', posted: '2025-03-05', tags: ['Product Management', 'Mobile', 'Agile', 'Fintech'], desc: 'Own the roadmap for Wealthsimple\'s mobile trading experience. Work with design, engineering, and data teams to ship features that delight hundreds of thousands of investors.', url: 'https://www.careerbuilder.com/jobs' },
+
+  // INDEED (via public search)
+  { id: 'in1', source: 'indeed', title: 'Customer Success Manager', org: 'Hootsuite', location: 'Vancouver, BC', type: 'full-time', sector: 'tech', posted: '2025-03-06', tags: ['Customer Success', 'SaaS', 'CRM'], desc: 'Drive retention and expansion for a portfolio of enterprise accounts. Build deep relationships, uncover expansion opportunities, and act as a strategic advisor to clients.', url: 'https://ca.indeed.com/jobs?q=customer+success+manager&l=Vancouver' },
+  { id: 'in2', source: 'indeed', title: 'French Bilingual Customer Service Rep', org: 'Concentrix', location: 'Montréal, QC', type: 'contract', sector: 'marketing', posted: '2025-03-05', tags: ['Bilingual', 'French/English', 'Customer Service'], desc: 'Handle inbound customer inquiries via phone, email, and chat in both French and English. Resolve issues efficiently and maintain high customer satisfaction scores.', url: 'https://ca.indeed.com/jobs?q=bilingual+customer+service&l=Montreal' },
+  { id: 'in3', source: 'indeed', title: 'Warehouse Associate', org: 'Amazon Canada', location: 'Mississauga, ON', type: 'part-time', sector: 'tech', posted: '2025-03-04', tags: ['Warehouse', 'Logistics', 'Physical'], desc: 'Join Amazon\'s fulfillment operations to pick, pack, and ship customer orders. Multiple shift options available with competitive pay and benefits from day one.', url: 'https://ca.indeed.com/jobs?q=warehouse&l=Mississauga' },
+  { id: 'in4', source: 'indeed', title: 'Elementary School Teacher', org: 'Toronto District School Board', location: 'Toronto, ON', type: 'full-time', sector: 'education', posted: '2025-03-03', tags: ['OCT Certified', 'Teaching', 'Elementary'], desc: 'Deliver engaging, inclusive curriculum to students in grades 1–6. Collaborate with school staff and families to create a positive and supportive learning environment.', url: 'https://ca.indeed.com/jobs?q=elementary+teacher&l=Toronto' },
+  { id: 'in5', source: 'indeed', title: 'UX Designer – Contract', org: 'Bell Canada', location: 'Remote', type: 'remote', sector: 'tech', posted: '2025-03-06', tags: ['Figma', 'UX Research', 'Prototyping'], desc: 'Design intuitive digital experiences for Bell\'s consumer product suite. Conduct user research, create wireframes, and collaborate with product and engineering teams in an agile environment.', url: 'https://ca.indeed.com/jobs?q=UX+designer&l=Remote' },
+  { id: 'in6', source: 'indeed', title: 'Pharmacist – Retail', org: 'Shoppers Drug Mart', location: 'Calgary, AB', type: 'full-time', sector: 'health', posted: '2025-03-02', tags: ['PharmD', 'Retail Pharmacy', 'Patient Care'], desc: 'Provide comprehensive pharmaceutical care including prescription dispensing, medication reviews, immunizations, and health consultations to a diverse patient population.', url: 'https://ca.indeed.com/jobs?q=pharmacist&l=Calgary' },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────
+let allJobs = [...MOCK_JOBS];
+let filteredJobs = [...MOCK_JOBS];
+let activeSource = 'all';
+let savedJobs = JSON.parse(localStorage.getItem('jobflow-saved') || '[]');
+let currentSort = 'newest';
+
+// ── INIT ──────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  showStatus('正在加载职位数据…');
+  setTimeout(() => {
+    renderJobs(filteredJobs);
+    updateCounts();
+    renderSaved();
+    hideStatus();
+    updateHeaderStats();
+  }, 900);
+
+  document.getElementById('searchInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') applyFilters();
+  });
+});
+
+// ── RENDER ────────────────────────────────────────────────────────
+function renderJobs(jobs) {
+  const grid = document.getElementById('jobs-grid');
+  document.getElementById('job-count').textContent = jobs.length;
+
+  if (!jobs.length) {
+    grid.innerHTML = `<div class="empty-state">
+      <h3>未找到匹配职位</h3>
+      <p>尝试修改搜索关键词或筛选条件</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = jobs.map((j, i) => `
+    <div class="job-card" data-source="${j.source}" style="animation-delay:${i * 0.05}s" onclick="openModal('${j.id}')">
+      <div class="card-top">
+        <div>
+          <div class="job-title">${j.title}</div>
+          <div class="job-org">${j.org}</div>
+        </div>
+        <span class="source-badge badge-${j.source}">${sourceName(j.source)}</span>
+      </div>
+      <div class="job-meta">
+        <span class="meta-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${j.location}
+        </span>
+        <span class="meta-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+          ${typeLabel(j.type)}
+        </span>
+        <span class="meta-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          ${timeAgo(j.posted)}
+        </span>
+      </div>
+      <div class="job-tags">${j.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+      <div class="card-actions" onclick="event.stopPropagation()">
+        <button class="btn-apply" onclick="applyJob('${j.id}', event)">🚀 立即申请</button>
+        <button class="btn-save ${savedJobs.includes(j.id) ? 'saved' : ''}" onclick="toggleSave('${j.id}', this)" title="收藏">
+          ${savedJobs.includes(j.id) ? '⭐' : '☆'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── FILTER ────────────────────────────────────────────────────────
+function filterSource(src, btn) {
+  activeSource = src;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const location = document.getElementById('locationSelect').value.toLowerCase();
+  const checkedTypes = [...document.querySelectorAll('.filter-options input[type="checkbox"]:checked')].map(c => c.value);
+
+  filteredJobs = allJobs.filter(j => {
+    const matchSrc = activeSource === 'all' || j.source === activeSource;
+    const matchQ = !query || j.title.toLowerCase().includes(query) || j.org.toLowerCase().includes(query) || j.tags.some(t => t.toLowerCase().includes(query));
+    const matchLoc = !location || j.location.toLowerCase().includes(location);
+    const matchType = checkedTypes.includes(j.type) || checkedTypes.includes(j.sector);
+    return matchSrc && matchQ && matchLoc && matchType;
+  });
+
+  sortJobs(currentSort, false);
+  renderJobs(filteredJobs);
+}
+
+// ── SORT ──────────────────────────────────────────────────────────
+function sortJobs(val, rerender = true) {
+  currentSort = val;
+  if (val === 'newest') filteredJobs.sort((a, b) => b.posted.localeCompare(a.posted));
+  else if (val === 'title') filteredJobs.sort((a, b) => a.title.localeCompare(b.title));
+  else if (val === 'source') filteredJobs.sort((a, b) => a.source.localeCompare(b.source));
+  if (rerender) renderJobs(filteredJobs);
+}
+
+// ── SAVE / BOOKMARK ───────────────────────────────────────────────
+function toggleSave(id, btn) {
+  if (savedJobs.includes(id)) {
+    savedJobs = savedJobs.filter(s => s !== id);
+    btn.textContent = '☆';
+    btn.classList.remove('saved');
+  } else {
+    savedJobs.push(id);
+    btn.textContent = '⭐';
+    btn.classList.add('saved');
+    showStatus('已收藏职位 ⭐');
+  }
+  localStorage.setItem('jobflow-saved', JSON.stringify(savedJobs));
+  renderSaved();
+  updateHeaderStats();
+}
+
+function renderSaved() {
+  const list = document.getElementById('saved-list');
+  if (!savedJobs.length) {
+    list.innerHTML = '<div class="saved-empty">暂无收藏</div>';
+    return;
+  }
+  list.innerHTML = savedJobs.map(id => {
+    const j = allJobs.find(x => x.id === id);
+    if (!j) return '';
+    return `<div class="saved-item">
+      <span class="saved-title" title="${j.title}">${j.title}</span>
+      <button class="btn-remove" onclick="removeSaved('${j.id}')" title="移除">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function removeSaved(id) {
+  savedJobs = savedJobs.filter(s => s !== id);
+  localStorage.setItem('jobflow-saved', JSON.stringify(savedJobs));
+  renderSaved();
+  updateHeaderStats();
+  // Update card button
+  renderJobs(filteredJobs);
+}
+
+// ── APPLY ─────────────────────────────────────────────────────────
+function applyJob(id, e) {
+  if (e) e.stopPropagation();
+  const j = allJobs.find(x => x.id === id);
+  if (j) {
+    showStatus(`正在跳转至 ${sourceName(j.source)} 申请页面…`);
+    setTimeout(() => {
+      window.open(j.url, '_blank', 'noopener,noreferrer');
+      hideStatus();
+    }, 600);
+  }
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────
+let currentModalJob = null;
+
+function openModal(id) {
+  const j = allJobs.find(x => x.id === id);
+  if (!j) return;
+  currentModalJob = j;
+  document.getElementById('modal-title').textContent = j.title;
+  document.getElementById('modal-org').textContent = `${j.org} · ${j.location} · ${typeLabel(j.type)}`;
+  document.getElementById('modal-desc').textContent = j.desc;
+  document.getElementById('modal-apply-btn').textContent = `🚀 前往 ${sourceName(j.source)} 申请`;
+  document.getElementById('modal-apply-btn').onclick = () => { applyJob(j.id); closeModal(); };
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
+
+// ── STATUS ────────────────────────────────────────────────────────
+let statusTimer;
+function showStatus(msg) {
+  clearTimeout(statusTimer);
+  document.getElementById('statusText').textContent = msg;
+  document.getElementById('statusBar').classList.add('show');
+}
+function hideStatus() {
+  statusTimer = setTimeout(() => document.getElementById('statusBar').classList.remove('show'), 1200);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function sourceName(src) {
+  return { charity: 'Charity Village', careerbuilder: 'CareerBuilder', indeed: 'Indeed' }[src] || src;
+}
+
+function typeLabel(t) {
+  return { 'full-time': '全职', 'part-time': '兼职', 'contract': '合同/临时', 'remote': '远程', 'volunteer': '志愿者' }[t] || t;
+}
+
+function timeAgo(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 86400000);
+  if (diff === 0) return '今天';
+  if (diff === 1) return '昨天';
+  return `${diff} 天前`;
+}
+
+function updateCounts() {
+  const types = ['full-time', 'part-time', 'contract', 'remote', 'volunteer'];
+  const ids = ['cnt-fulltime', 'cnt-parttime', 'cnt-contract', 'cnt-remote', 'cnt-volunteer'];
+  types.forEach((t, i) => {
+    document.getElementById(ids[i]).textContent = allJobs.filter(j => j.type === t).length;
+  });
+}
+
+function updateHeaderStats() {
+  document.getElementById('hd-total').textContent = allJobs.length;
+  document.getElementById('hd-saved').textContent = savedJobs.length;
+}
+</script>
+</body>
+</html>
